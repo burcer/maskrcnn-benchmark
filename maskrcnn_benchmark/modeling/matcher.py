@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
-
+from maskrcnn_benchmark import _C
 
 class Matcher(object):
     """
@@ -63,20 +63,24 @@ class Matcher(object):
 
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction
-        matched_vals, matches = match_quality_matrix.max(dim=0)
-        if self.allow_low_quality_matches:
-            all_matches = matches.clone()
+        
+        if match_quality_matrix.is_cuda: 
+            matches = _C.match_proposals(match_quality_matrix,self.allow_low_quality_matches, self.low_threshold, self.high_threshold)
+        else:       
+            matched_vals, matches = match_quality_matrix.max(dim=0)
+            if self.allow_low_quality_matches:
+                all_matches = matches.clone()
 
-        # Assign candidate matches with low quality to negative (unassigned) values
-        below_low_threshold = matched_vals < self.low_threshold
-        between_thresholds = (matched_vals >= self.low_threshold) & (
-            matched_vals < self.high_threshold
-        )
-        matches[below_low_threshold] = Matcher.BELOW_LOW_THRESHOLD
-        matches[between_thresholds] = Matcher.BETWEEN_THRESHOLDS
+            # Assign candidate matches with low quality to negative (unassigned) values
+            below_low_threshold = matched_vals < self.low_threshold
+            between_thresholds = (matched_vals >= self.low_threshold) & (
+                matched_vals < self.high_threshold
+            )
+            matches[below_low_threshold] = Matcher.BELOW_LOW_THRESHOLD
+            matches[between_thresholds] = Matcher.BETWEEN_THRESHOLDS
 
-        if self.allow_low_quality_matches:
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            if self.allow_low_quality_matches:
+                self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
 
