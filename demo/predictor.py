@@ -7,8 +7,6 @@ from maskrcnn_benchmark.modeling.detector import build_detection_model
 from maskrcnn_benchmark.utils.checkpoint import DetectronCheckpointer
 from maskrcnn_benchmark.structures.image_list import to_image_list
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.inference import Masker
-from maskrcnn_benchmark import layers as L
-from maskrcnn_benchmark.utils import cv2_util
 
 
 class COCODemo(object):
@@ -288,7 +286,7 @@ class COCODemo(object):
 
         for mask, color in zip(masks, colors):
             thresh = mask[0, :, :, None]
-            contours, hierarchy = cv2_util.findContours(
+            _, contours, hierarchy = cv2.findContours(
                 thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
             )
             image = cv2.drawContours(image, contours, -1, color, 3)
@@ -309,7 +307,7 @@ class COCODemo(object):
         """
         masks = predictions.get_field("mask")
         masks_per_dim = self.masks_per_dim
-        masks = L.interpolate(
+        masks = torch.nn.functional.interpolate(
             masks.float(), scale_factor=1 / masks_per_dim
         ).byte()
         height, width = masks.shape[-2:]
