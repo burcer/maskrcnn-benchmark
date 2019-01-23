@@ -13,8 +13,6 @@ from csHelpers import *
 from cityscapesscripts.evaluation.instance import *
 from cityscapesscripts.helpers.csHelpers import *
 import cv2
-from maskrcnn_benchmark.utils import cv2_util
-
 
 def instances2dict_with_polygons(imageFileList, verbose=False):
     imgCount     = 0
@@ -48,7 +46,7 @@ def instances2dict_with_polygons(imageFileList, verbose=False):
             #instances[id2label[instanceObj.labelID].name].append(instanceObj.toDict())
             if id2label[instanceObj.labelID].hasInstances:
                 mask = (imgNp == instanceId).astype(np.uint8)
-                contour, hier = cv2_util.findContours(
+                im2, contour, hier = cv2.findContours(
                     mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
                 polygons = [c.reshape(-1).tolist() for c in contour]
